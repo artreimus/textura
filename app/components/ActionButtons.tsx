@@ -1,10 +1,9 @@
-import { Download, Copy, Wand2, RefreshCw } from 'lucide-react';
+import { Download, Copy, RefreshCw } from 'lucide-react';
 import { savePngFromText } from '@/app/lib/png-export';
 import type { ConversionSettings } from '@/app/hooks/useImageConverter';
 import { toast } from 'sonner';
 
 interface ActionButtonsProps {
-  onConvert: () => void;
   rawText: string;
   colorMatrix: (string | null)[][];
   settings: ConversionSettings;
@@ -12,21 +11,17 @@ interface ActionButtonsProps {
 }
 
 export function ActionButtons({
-  onConvert,
   rawText,
   colorMatrix,
   settings,
   onReset,
 }: ActionButtonsProps) {
-  const handleConvert = () => {
-    onConvert();
-    toast.success('Image converted successfully!');
-  };
-
   const handleReset = () => {
     onReset();
     toast.info('All settings reset to defaults');
   };
+
+  const hasResult = Boolean(rawText && rawText.trim());
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(rawText);
@@ -73,18 +68,10 @@ export function ActionButtons({
           Actions
         </h3>
         <div className="space-y-3">
-          <button
-            onClick={handleConvert}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg font-medium transition-colors"
-          >
-            <Wand2 className="w-4 h-4" />
-            Convert Image
-          </button>
-
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={onCopy}
-              disabled={!rawText}
+              disabled={!hasResult}
               className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Copy className="w-4 h-4" />
@@ -102,7 +89,7 @@ export function ActionButtons({
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={onDownloadTxt}
-              disabled={!rawText}
+              disabled={!hasResult}
               className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Download className="w-4 h-4" />
@@ -110,7 +97,7 @@ export function ActionButtons({
             </button>
             <button
               onClick={onDownloadPng}
-              disabled={!rawText}
+              disabled={!hasResult}
               className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Download className="w-4 h-4" />

@@ -71,7 +71,6 @@ export default function AsciiImageConverter() {
               />
 
               <ActionButtons
-                onConvert={convert}
                 rawText={rawText}
                 colorMatrix={colorMatrix}
                 settings={settings}
