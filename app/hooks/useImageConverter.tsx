@@ -10,9 +10,13 @@ import {
   loadImageFromUrl,
   computeCharGrid,
   sampleImage,
+  sampleImageData,
+  getGifFrameImageData,
   SIMPLE_MAP,
   DETAILED_MAP,
   floydSteinbergDither,
+  isAnimatedGif,
+  getGifData,
 } from '@/app/lib/image-utils';
 
 // Conversion types and functions
@@ -224,12 +228,19 @@ export interface ConversionSettings {
   dither: boolean;
   bgColor: string;
   fontFamily: string;
+  // GIF animation settings
+  gifSpeed: number;
+  gifPlaying: boolean;
+  gifCurrentFrame: number;
 }
 
 export function useImageConverter() {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [imgSrc, setImgSrc] = useState<string>(''); // For displaying the image
   const [imgUrl, setImgUrl] = useState<string>(''); // For the URL input
+  const [isGif, setIsGif] = useState<boolean>(false);
+  const animationRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number>(0);
 
   // Settings state
   const [settings, setSettings] = useState<ConversionSettings>({
@@ -248,6 +259,10 @@ export function useImageConverter() {
     bgColor: 'rgba(0,0,0,1)',
     fontFamily:
       'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    // GIF animation settings
+    gifSpeed: 1.0,
+    gifPlaying: true,
+    gifCurrentFrame: 0,
   });
 
   // Results state
@@ -282,6 +297,10 @@ export function useImageConverter() {
     setImg(image);
     setImgSrc(fileUrl);
     setImgUrl('');
+    setIsGif(isAnimatedGif(image));
+    if (isAnimatedGif(image)) {
+      setSettings(prev => ({ ...prev, gifCurrentFrame: 0, gifPlaying: true }));
+    }
   }, []);
 
   const loadImageFromURL = useCallback(async () => {
@@ -289,6 +308,10 @@ export function useImageConverter() {
     const image = await loadImageFromUrl(imgUrl.trim());
     setImg(image);
     setImgSrc(imgUrl.trim());
+    setIsGif(isAnimatedGif(image));
+    if (isAnimatedGif(image)) {
+      setSettings(prev => ({ ...prev, gifCurrentFrame: 0, gifPlaying: true }));
+    }
   }, [imgUrl]);
 
   const convert = useCallback(() => {
@@ -303,7 +326,19 @@ export function useImageConverter() {
     });
 
     if (settings.mode === 'ascii') {
-      const { r, g, b, gray } = sampleImage(img, cols, rows);
+      // Handle GIF frame sampling
+      let r: Uint8ClampedArray, g: Uint8ClampedArray, b: Uint8ClampedArray, gray: Uint8ClampedArray;
+      
+      if (isGif) {
+        const frameImageData = getGifFrameImageData(img, settings.gifCurrentFrame);
+        if (frameImageData) {
+          ({ r, g, b, gray } = sampleImageData(frameImageData, cols, rows));
+        } else {
+          ({ r, g, b, gray } = sampleImage(img, cols, rows));
+        }
+      } else {
+        ({ r, g, b, gray } = sampleImage(img, cols, rows));
+      }
       const { jsx, text } = toAscii({
         cols,
         rows,
@@ -353,7 +388,20 @@ export function useImageConverter() {
     } else {
       const sampleW = cols * 2,
         sampleH = rows * 4;
-      const { r, g, b, gray } = sampleImage(img, sampleW, sampleH);
+        
+      // Handle GIF frame sampling for Braille mode
+      let r: Uint8ClampedArray, g: Uint8ClampedArray, b: Uint8ClampedArray, gray: Uint8ClampedArray;
+      
+      if (isGif) {
+        const frameImageData = getGifFrameImageData(img, settings.gifCurrentFrame);
+        if (frameImageData) {
+          ({ r, g, b, gray } = sampleImageData(frameImageData, sampleW, sampleH));
+        } else {
+          ({ r, g, b, gray } = sampleImage(img, sampleW, sampleH));
+        }
+      } else {
+        ({ r, g, b, gray } = sampleImage(img, sampleW, sampleH));
+      }
       const { jsx, text } = toBraille({
         cols,
         rows,
@@ -384,9 +432,15 @@ export function useImageConverter() {
       );
       setRawText(text);
     }
-  }, [img, settings, activeMap]);
+  }, [img, settings, activeMap, isGif]);
 
   const reset = useCallback(() => {
+    // Clean up animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
     // Clean up blob URL if it exists
     if (imgSrc && imgSrc.startsWith('blob:')) {
       URL.revokeObjectURL(imgSrc);
@@ -394,6 +448,7 @@ export function useImageConverter() {
     setImg(null);
     setImgSrc('');
     setImgUrl('');
+    setIsGif(false);
     setSettings({
       mode: 'ascii',
       mapKind: 'simple',
@@ -410,6 +465,9 @@ export function useImageConverter() {
       bgColor: 'rgba(0,0,0,1)',
       fontFamily:
         'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      gifSpeed: 1.0,
+      gifPlaying: true,
+      gifCurrentFrame: 0,
     });
   }, [imgSrc]);
 
@@ -422,6 +480,48 @@ export function useImageConverter() {
     };
   }, [imgSrc]);
 
+  // GIF animation logic
+  const animateGif = useCallback(() => {
+    if (!img || !isGif || !settings.gifPlaying) return;
+    
+    const gifData = getGifData(img);
+    if (!gifData || gifData.frames.length <= 1) return;
+    
+    const animate = (currentTime: number) => {
+      if (currentTime - lastFrameTimeRef.current >= (gifData.frames[settings.gifCurrentFrame].delay / settings.gifSpeed)) {
+        setSettings(prev => ({
+          ...prev,
+          gifCurrentFrame: (prev.gifCurrentFrame + 1) % gifData.frames.length
+        }));
+        lastFrameTimeRef.current = currentTime;
+      }
+      
+      if (settings.gifPlaying) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+  }, [img, isGif, settings.gifPlaying, settings.gifCurrentFrame, settings.gifSpeed]);
+  
+  // Start/stop GIF animation
+  useEffect(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
+    if (isGif && settings.gifPlaying) {
+      animateGif();
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [animateGif, isGif, settings.gifPlaying]);
+
   return {
     // State
     img,
@@ -432,6 +532,8 @@ export function useImageConverter() {
     rendered,
     rawText,
     colorMatrix: colorMatrixRef.current,
+    isGif,
+    gifData: isGif && img ? getGifData(img) : null,
 
     // Actions
     updateSetting,

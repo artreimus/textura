@@ -18,6 +18,8 @@ export default function AsciiImageConverter() {
     rendered,
     rawText,
     colorMatrix,
+    isGif,
+    gifData,
     updateSetting,
     loadImageFromFiles,
     loadImageFromURL,
@@ -68,6 +70,8 @@ export default function AsciiImageConverter() {
               <ControlPanel
                 settings={settings}
                 onSettingChange={updateSetting}
+                isGif={isGif}
+                gifData={gifData}
               />
 
               <ActionButtons

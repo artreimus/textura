@@ -1,4 +1,4 @@
-import { FlipHorizontal2, FlipVertical2 } from 'lucide-react';
+import { FlipHorizontal2, FlipVertical2, Play, Pause, SkipForward, SkipBack, Gauge } from 'lucide-react';
 import { Slider } from '@/app/components/ui/slider';
 import type { ConversionSettings } from '@/app/hooks/useImageConverter';
 
@@ -8,9 +8,11 @@ interface ControlPanelProps {
     key: K,
     value: ConversionSettings[K]
   ) => void;
+  isGif?: boolean;
+  gifData?: { frames: { canvas: HTMLCanvasElement; delay: number }[]; totalDuration: number } | null;
 }
 
-export function ControlPanel({ settings, onSettingChange }: ControlPanelProps) {
+export function ControlPanel({ settings, onSettingChange, isGif, gifData }: ControlPanelProps) {
   return (
     <div className="space-y-12">
       {/* Mode Selection */}
@@ -235,6 +237,85 @@ export function ControlPanel({ settings, onSettingChange }: ControlPanelProps) {
           )}
         </div>
       </div>
+
+      {/* GIF Animation Controls */}
+      {isGif && gifData && gifData.frames && gifData.frames.length > 1 && (
+        <div>
+          <h3 className="text-sm font-medium text-slate-700 dark:text-zinc-300 mb-6">
+            GIF Animation
+          </h3>
+          <div className="space-y-6">
+            {/* Playback Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onSettingChange('gifPlaying', !settings.gifPlaying)}
+                className="p-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors duration-200"
+                title={settings.gifPlaying ? 'Pause' : 'Play'}
+              >
+                {settings.gifPlaying ? (
+                  <Pause className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+                ) : (
+                  <Play className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+                )}
+              </button>
+              <button
+                onClick={() => onSettingChange('gifCurrentFrame', Math.max(0, settings.gifCurrentFrame - 1))}
+                className="p-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors duration-200"
+                title="Previous frame"
+              >
+                <SkipBack className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+              </button>
+              <button
+                onClick={() => onSettingChange('gifCurrentFrame', (settings.gifCurrentFrame + 1) % gifData.frames.length)}
+                className="p-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors duration-200"
+                title="Next frame"
+              >
+                <SkipForward className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+              </button>
+              <div className="flex-1 text-center">
+                <span className="text-xs text-slate-500 dark:text-zinc-400">
+                  Frame {settings.gifCurrentFrame + 1} of {gifData.frames.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Frame Scrubber */}
+            <div>
+              <label className="block text-xs text-slate-500 dark:text-zinc-400 mb-3">
+                Frame: {settings.gifCurrentFrame + 1}
+              </label>
+              <Slider
+                value={[settings.gifCurrentFrame]}
+                onValueChange={(values) => onSettingChange('gifCurrentFrame', values[0])}
+                min={0}
+                max={gifData.frames.length - 1}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            {/* Speed Control */}
+            <div>
+              <label className="block text-xs text-slate-500 dark:text-zinc-400 mb-3 flex items-center gap-2">
+                <Gauge className="w-3 h-3" />
+                Speed: {settings.gifSpeed.toFixed(1)}x
+              </label>
+              <Slider
+                value={[settings.gifSpeed]}
+                onValueChange={(values) => onSettingChange('gifSpeed', values[0])}
+                min={0.1}
+                max={5.0}
+                step={0.1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-slate-400 dark:text-zinc-500 mt-1">
+                <span>0.1x</span>
+                <span>5x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Export Settings */}
       <div>
