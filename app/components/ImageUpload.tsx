@@ -1,10 +1,11 @@
 import { Upload } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ImageUploadProps {
   imgUrl: string;
   onImgUrlChange: (url: string) => void;
-  onFilesChange: (files: FileList | null) => void;
-  onLoadUrl: () => void;
+  onFilesChange: (files: FileList | null) => Promise<void>;
+  onLoadUrl: () => Promise<void>;
   img: HTMLImageElement | null;
 }
 
@@ -15,6 +16,32 @@ export function ImageUpload({
   onLoadUrl,
   img 
 }: ImageUploadProps) {
+  const handleFilesChange = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    try {
+      await onFilesChange(files);
+      toast.success('Image uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast.error('Failed to upload image. Please try again.');
+    }
+  };
+
+  const handleLoadUrl = async () => {
+    if (!imgUrl.trim()) {
+      toast.error('Please enter a valid URL');
+      return;
+    }
+    
+    try {
+      await onLoadUrl();
+      toast.success('Image loaded from URL successfully!');
+    } catch (error) {
+      console.error('Failed to load image from URL:', error);
+      toast.error('Failed to load image from URL. Please check the URL and try again.');
+    }
+  };
   return (
     <div className="space-y-8">
       <div>
@@ -30,7 +57,7 @@ export function ImageUpload({
             type="file"
             accept="image/*"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            onChange={(e) => onFilesChange(e.target.files)}
+            onChange={(e) => handleFilesChange(e.target.files)}
           />
         </label>
       </div>
@@ -47,7 +74,7 @@ export function ImageUpload({
             className="flex-1 bg-transparent text-sm placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
           <button
-            onClick={onLoadUrl}
+            onClick={handleLoadUrl}
             className="px-4 py-1.5 text-xs font-medium bg-slate-900 hover:bg-slate-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-md transition-colors"
           >
             Load
