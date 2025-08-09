@@ -13,7 +13,7 @@ import {
   SIMPLE_MAP,
   DETAILED_MAP,
   floydSteinbergDither,
-} from '@/lib/image-utils';
+} from '@/app/lib/image-utils';
 
 // Conversion types and functions
 interface ConversionOptions {
