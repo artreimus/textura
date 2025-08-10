@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Asciify',
+  title: 'Textura',
   description:
     'Convert images to ASCII or Braille art with customizable options',
 };
@@ -35,7 +35,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
-          storageKey="asciify-theme"
+          storageKey="Textura-theme"
           disableTransitionOnChange
         >
           <div className="min-h-screen flex flex-col">
@@ -44,7 +44,7 @@ export default function RootLayout({
               <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-slate-800 dark:text-zinc-200 tracking-tight">
-                    Asciify
+                    Textura
                   </span>
                 </div>
                 <ThemeToggle />

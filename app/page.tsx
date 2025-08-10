@@ -43,7 +43,7 @@ export default function AsciiImageConverter() {
           className="mb-10 sm:mb-16"
         >
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-slate-900 dark:text-zinc-100 mb-3 sm:mb-4">
-            ASCIIFY
+            Textura
           </h1>
           <p className="text-base sm:text-lg text-slate-600 dark:text-zinc-400 max-w-2xl">
             Transform images into ASCII or Braille art with precision controls
