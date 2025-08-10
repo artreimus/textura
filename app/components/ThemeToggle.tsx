@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { Moon, Sun, Monitor, ChevronDown } from 'lucide-react';
@@ -31,14 +31,16 @@ export function ThemeToggle() {
   if (!mounted) return null;
 
   const current = theme ?? 'system';
-  const icon = current === 'dark' ? (
-    <Moon className="w-4 h-4" />
-  ) : current === 'light' ? (
-    <Sun className="w-4 h-4" />
-  ) : (
-    <Monitor className="w-4 h-4" />
-  );
-  const label = current === 'system' ? 'System' : current === 'light' ? 'Light' : 'Dark';
+  const icon =
+    current === 'dark' ? (
+      <Moon className="w-4 h-4" />
+    ) : current === 'light' ? (
+      <Sun className="w-4 h-4" />
+    ) : (
+      <Monitor className="w-4 h-4" />
+    );
+  const label =
+    current === 'system' ? 'System' : current === 'light' ? 'Light' : 'Dark';
 
   return (
     <div ref={ref} className="relative">
@@ -86,9 +88,6 @@ export function ThemeToggle() {
             <Moon className="w-4 h-4" />
             Dark
           </button>
-          <div className="px-2.5 pt-1.5 pb-1 text-[10px] uppercase tracking-wide text-slate-400 dark:text-zinc-500">
-            Default: System ({resolvedTheme ?? 'auto'})
-          </div>
         </div>
       )}
     </div>
