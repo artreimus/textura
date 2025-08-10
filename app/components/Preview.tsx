@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from 'react';
-import { Type, Maximize2, X, Minus, Plus } from 'lucide-react';
+import { Type, Maximize2, X } from 'lucide-react';
 import Image from 'next/image';
 
 interface PreviewProps {
@@ -107,32 +107,23 @@ export function Preview({ img, imgSrc, rendered }: PreviewProps) {
                 >
                   {/* Header with controls */}
                   <div className="sticky top-0 z-10 flex items-center justify-between gap-2 p-3 bg-gradient-to-b from-black/40 to-transparent">
-                    <div className="flex items-center gap-2 text-white/80 text-xs">
-                      <span className="px-2 py-1 rounded border border-white/10 bg-white/5">Zoom</span>
-                      <button
-                        type="button"
-                        onClick={decreaseZoom}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                        aria-label="Zoom out"
+                    <div className="flex items-center gap-3 text-white/80 text-xs">
+                      <label className="px-2 py-1 rounded border border-white/10 bg-white/5">Zoom</label>
+                      <select
+                        aria-label="Zoom percentage"
+                        value={fsFontScale}
+                        onChange={(e) => setFsFontScale(parseFloat(e.target.value))}
+                        className="h-8 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20 px-2 outline-none"
                       >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-14 text-center tabular-nums">{Math.round(fsFontScale * 100)}%</span>
-                      <button
-                        type="button"
-                        onClick={increaseZoom}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                        aria-label="Zoom in"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetZoom}
-                        className="ml-1 inline-flex items-center px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/15 text-white border border-white/15"
-                      >
-                        Reset
-                      </button>
+                        <option className="bg-zinc-900 text-white" value={0.5}>50%</option>
+                        <option className="bg-zinc-900 text-white" value={0.75}>75%</option>
+                        <option className="bg-zinc-900 text-white" value={1}>100%</option>
+                        <option className="bg-zinc-900 text-white" value={1.25}>125%</option>
+                        <option className="bg-zinc-900 text-white" value={1.5}>150%</option>
+                        <option className="bg-zinc-900 text-white" value={2}>200%</option>
+                        <option className="bg-zinc-900 text-white" value={3}>300%</option>
+                        <option className="bg-zinc-900 text-white" value={4}>400%</option>
+                      </select>
                     </div>
                     <button
                       type="button"
