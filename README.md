@@ -4,6 +4,17 @@ _Built with ❤️ by [@artreimus](https://github.com/artreimus)_
 
 Transform your images into stunning ASCII or Braille art with precision controls for character mapping, dimensions, colors, and visual effects. Experience real-time conversion with a beautiful, responsive interface.
 
+## 📸 App Preview
+
+### Live Demo
+
+![Textura Demo](public/demo.gif)
+
+### App Screenshots
+
+  <img src="public/app-1.png" alt="Textura - ASCII Art Conversion">
+  <img src="public/app-2.png" alt="Textura - Braille Art Conversion" >
+
 ## ✨ Features
 
 - **🎨 Dual Art Modes**: Convert images to ASCII art or Braille patterns with distinct algorithms
