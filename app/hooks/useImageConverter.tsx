@@ -434,6 +434,105 @@ export function useImageConverter() {
     }
   }, [img, settings, activeMap, isGif]);
 
+  const convertAllFrames = useCallback(() => {
+    if (!img || !isGif) return [];
+    
+    const gifData = getGifData(img);
+    if (!gifData) return [];
+
+    const fitTo = Math.min(140, Math.floor((window.innerWidth - 64) / 7));
+    const { cols, rows } = computeCharGrid(img.width, img.height, {
+      width: settings.widthChars || undefined,
+      height: settings.heightChars || undefined,
+      isBraille: settings.mode === 'braille',
+      fitTo: settings.widthChars === 0 ? fitTo : null,
+    });
+
+    const frames: { text: string; colorMatrix: (string | null)[][]; delay: number }[] = [];
+
+    for (let frameIndex = 0; frameIndex < gifData.frames.length; frameIndex++) {
+      const frameImageData = getGifFrameImageData(img, frameIndex);
+      if (!frameImageData) continue;
+
+      if (settings.mode === 'ascii') {
+        const { r, g, b, gray } = sampleImageData(frameImageData, cols, rows);
+        const { text } = toAscii({
+          cols,
+          rows,
+          flipX: settings.flipX,
+          flipY: settings.flipY,
+          negative: settings.negative,
+          coloredMode: settings.coloredMode,
+          colorBg: settings.colorBg,
+          charMap: activeMap,
+          r,
+          g,
+          b,
+          gray,
+        });
+
+        // Build color matrix for this frame
+        const colorMatrix: (string | null)[][] = [];
+        const idx = (x: number, y: number) => y * cols + x;
+        for (let y = 0; y < rows; y++) {
+          const lineColors: (string | null)[] = [];
+          for (let x = 0; x < cols; x++) {
+            let R = r[idx(x, y)], G = g[idx(x, y)], B = b[idx(x, y)];
+            let L = gray[idx(x, y)];
+            if (settings.negative) {
+              R = 255 - R; G = 255 - G; B = 255 - B; L = 255 - L;
+            }
+            if (settings.coloredMode === 'color')
+              lineColors.push(`rgb(${R},${G},${B})`);
+            else if (settings.coloredMode === 'grayscale')
+              lineColors.push(`rgb(${L},${L},${L})`);
+            else lineColors.push(null);
+          }
+          colorMatrix.push(lineColors);
+        }
+
+        frames.push({
+          text,
+          colorMatrix,
+          delay: gifData.frames[frameIndex].delay
+        });
+      } else {
+        const sampleW = cols * 2, sampleH = rows * 4;
+        const { r, g, b, gray } = sampleImageData(frameImageData, sampleW, sampleH);
+        const { text } = toBraille({
+          cols,
+          rows,
+          flipX: settings.flipX,
+          flipY: settings.flipY,
+          negative: settings.negative,
+          coloredMode: settings.coloredMode,
+          colorBg: settings.colorBg,
+          r,
+          g,
+          b,
+          gray,
+          threshold: settings.threshold,
+          dither: settings.dither,
+        });
+
+        // Minimal color matrix for Braille
+        const colorMatrix: (string | null)[][] = [];
+        for (let y = 0; y < rows; y++) {
+          const line: (string | null)[] = new Array(cols).fill(null);
+          colorMatrix.push(line);
+        }
+
+        frames.push({
+          text,
+          colorMatrix,
+          delay: gifData.frames[frameIndex].delay
+        });
+      }
+    }
+
+    return frames;
+  }, [img, isGif, settings, activeMap]);
+
   const reset = useCallback(() => {
     // Clean up animation
     if (animationRef.current) {
@@ -540,6 +639,7 @@ export function useImageConverter() {
     loadImageFromFiles,
     loadImageFromURL,
     convert,
+    convertAllFrames,
     reset,
   };
 }

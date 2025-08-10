@@ -24,6 +24,7 @@ export default function AsciiImageConverter() {
     loadImageFromFiles,
     loadImageFromURL,
     convert,
+    convertAllFrames,
     reset,
   } = useImageConverter();
 
@@ -79,6 +80,9 @@ export default function AsciiImageConverter() {
                 colorMatrix={colorMatrix}
                 settings={settings}
                 onReset={reset}
+                isGif={isGif}
+                gifData={gifData}
+                onConvertAllFrames={convertAllFrames}
               />
             </div>
           </motion.div>

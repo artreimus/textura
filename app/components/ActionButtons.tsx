@@ -1,5 +1,6 @@
-import { Download, Copy, RefreshCw } from 'lucide-react';
+import { Download, Copy, RefreshCw, Film } from 'lucide-react';
 import { savePngFromText } from '@/app/lib/png-export';
+import { saveGifFromFrames } from '@/app/lib/gif-export';
 import type { ConversionSettings } from '@/app/hooks/useImageConverter';
 import { toast } from 'sonner';
 
@@ -8,6 +9,9 @@ interface ActionButtonsProps {
   colorMatrix: (string | null)[][];
   settings: ConversionSettings;
   onReset: () => void;
+  isGif?: boolean;
+  gifData?: { frames: { canvas: HTMLCanvasElement; delay: number }[] } | null;
+  onConvertAllFrames?: () => { text: string; colorMatrix: (string | null)[][]; delay: number }[];
 }
 
 export function ActionButtons({
@@ -15,6 +19,9 @@ export function ActionButtons({
   colorMatrix,
   settings,
   onReset,
+  isGif,
+  gifData,
+  onConvertAllFrames,
 }: ActionButtonsProps) {
   const handleReset = () => {
     onReset();
@@ -61,6 +68,37 @@ export function ActionButtons({
     }
   };
 
+  const onDownloadGif = async () => {
+    if (!isGif || !gifData || !onConvertAllFrames) {
+      toast.error('GIF export not available');
+      return;
+    }
+
+    try {
+      toast.info('Generating GIF... This may take a moment.');
+      const frames = onConvertAllFrames();
+      
+      if (frames.length === 0) {
+        toast.error('No frames to export');
+        return;
+      }
+
+      await saveGifFromFrames(frames, {
+        filename: (settings.mode === 'braille' ? 'braille' : 'ascii') + '-art.gif',
+        bg: settings.bgColor,
+        fontFamily: settings.fontFamily,
+        braille: settings.mode === 'braille',
+        quality: 10, // Lower quality for smaller file size
+        delay: 100, // Default delay
+      });
+      
+      toast.success('GIF file downloaded successfully!');
+    } catch (error) {
+      console.error('GIF export error:', error);
+      toast.error('Failed to download GIF file');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -86,7 +124,7 @@ export function ActionButtons({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${isGif ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <button
               onClick={onDownloadTxt}
               disabled={!hasResult}
@@ -95,15 +133,38 @@ export function ActionButtons({
               <Download className="w-4 h-4" />
               Export TXT
             </button>
-            <button
-              onClick={onDownloadPng}
-              disabled={!hasResult}
-              className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export PNG
-            </button>
+            {!isGif && (
+              <button
+                onClick={onDownloadPng}
+                disabled={!hasResult}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export PNG
+              </button>
+            )}
           </div>
+          
+          {isGif && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={onDownloadPng}
+                disabled={!hasResult}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                PNG (Frame)
+              </button>
+              <button
+                onClick={onDownloadGif}
+                disabled={!hasResult}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-blue-700 dark:text-blue-300"
+              >
+                <Film className="w-4 h-4" />
+                Export GIF
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
