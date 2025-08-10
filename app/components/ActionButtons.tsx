@@ -75,7 +75,9 @@ export function ActionButtons({
     }
 
     try {
-      toast.info('Generating GIF... This may take a moment.');
+      const frameCount = gifData.frames.length;
+      toast.info(`Generating GIF with ${frameCount} frames... This may take a moment.`);
+      
       const frames = onConvertAllFrames();
       
       if (frames.length === 0) {
@@ -83,19 +85,20 @@ export function ActionButtons({
         return;
       }
 
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
       await saveGifFromFrames(frames, {
-        filename: (settings.mode === 'braille' ? 'braille' : 'ascii') + '-art.gif',
+        filename: `${settings.mode}-art-${timestamp}.gif`,
         bg: settings.bgColor,
         fontFamily: settings.fontFamily,
         braille: settings.mode === 'braille',
-        quality: 10, // Lower quality for smaller file size
-        delay: 100, // Default delay
+        quality: 10, // Optimized for file size
+        delay: 100, // Will be overridden by actual frame delays
       });
       
-      toast.success('GIF file downloaded successfully!');
+      toast.success(`GIF exported successfully! (${frameCount} frames)`);
     } catch (error) {
       console.error('GIF export error:', error);
-      toast.error('Failed to download GIF file');
+      toast.error('Failed to export GIF. Please try again.');
     }
   };
 
