@@ -1,4 +1,6 @@
-import { Type } from 'lucide-react';
+"use client";
+import { useCallback, useEffect, useState } from 'react';
+import { Type, Maximize2, X, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 
 interface PreviewProps {
@@ -8,6 +10,52 @@ interface PreviewProps {
 }
 
 export function Preview({ img, imgSrc, rendered }: PreviewProps) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fsFontScale, setFsFontScale] = useState(1);
+
+  const increaseZoom = useCallback(
+    () => setFsFontScale((v) => Math.min(4, +(v + 0.1).toFixed(2))),
+    []
+  );
+  const decreaseZoom = useCallback(
+    () => setFsFontScale((v) => Math.max(0.5, +(v - 0.1).toFixed(2))),
+    []
+  );
+  const resetZoom = useCallback(() => setFsFontScale(1), []);
+
+  const closeFullscreen = useCallback(() => setIsFullscreen(false), []);
+  const onBackdropClick = useCallback<React.MouseEventHandler<HTMLDivElement>>(
+    (e) => {
+      // Only close if the click is directly on the backdrop
+      if (e.currentTarget === e.target) closeFullscreen();
+    },
+    [closeFullscreen]
+  );
+
+
+  // Close on ESC
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+      if (e.key === '+' || e.key === '=') increaseZoom();
+      if (e.key === '-' || e.key === '_') decreaseZoom();
+      if (e.key.toLowerCase() === '0') resetZoom();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullscreen, increaseZoom, decreaseZoom, resetZoom]);
+
+  // Lock body scroll while fullscreen is open
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isFullscreen]);
+
   return (
     <div className="space-y-8">
       {/* Main Preview */}
@@ -26,11 +74,92 @@ export function Preview({ img, imgSrc, rendered }: PreviewProps) {
           </div>
         ) : (
           <div className="relative">
-            <div className="overflow-auto max-h-[75vh] p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 text-white rounded-lg border border-slate-700 dark:border-zinc-700">
-              <div className="font-mono text-xs leading-none whitespace-pre">
+            {/* Fullscreen trigger */}
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(true)}
+              title="View fullscreen"
+              className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur transition-colors"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              Fullscreen
+            </button>
+
+            <div className="overflow-auto max-h-[75vh] p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 text-white rounded-lg border border-slate-700 dark:border-zinc-700 flex justify-center">
+              <div className="inline-block font-mono text-xs leading-none whitespace-pre">
                 {rendered}
               </div>
             </div>
+
+            {/* Fullscreen overlay */}
+            {isFullscreen && (
+              <div
+                className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm"
+                onClick={onBackdropClick}
+                onDoubleClick={onBackdropClick}
+                role="dialog"
+                aria-modal="true"
+              >
+                <div
+                  className="absolute inset-0 flex flex-col"
+                  onClick={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header with controls */}
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 p-3 bg-gradient-to-b from-black/40 to-transparent">
+                    <div className="flex items-center gap-2 text-white/80 text-xs">
+                      <span className="px-2 py-1 rounded border border-white/10 bg-white/5">Zoom</span>
+                      <button
+                        type="button"
+                        onClick={decreaseZoom}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                        aria-label="Zoom out"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-14 text-center tabular-nums">{Math.round(fsFontScale * 100)}%</span>
+                      <button
+                        type="button"
+                        onClick={increaseZoom}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                        aria-label="Zoom in"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetZoom}
+                        className="ml-1 inline-flex items-center px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/15 text-white border border-white/15"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeFullscreen}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors"
+                      aria-label="Close fullscreen"
+                    >
+                      <X className="w-4 h-4" />
+                      Close
+                    </button>
+                  </div>
+
+                  {/* Centered content area */}
+                  <div className="flex-1 overflow-auto p-4 md:p-6">
+                    <div className="min-h-full grid place-items-center">
+                      <div className="max-w-[95vw] max-h-[85vh] overflow-auto p-4 md:p-6 rounded-lg border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+                        <div className="inline-block" style={{ transform: `scale(${fsFontScale})`, transformOrigin: 'center center' }}>
+                          <div className="font-mono whitespace-pre leading-none">
+                            {rendered}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
