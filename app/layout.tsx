@@ -4,6 +4,8 @@ import './globals.css';
 import { Toaster } from '@/app/components/ui/sonner';
 import { ThemeToggle } from '@/app/components/ThemeToggle';
 import { ThemeProvider } from '@/app/components/ThemeProvider';
+import { Github } from 'lucide-react';
+import Link from 'next/link';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -47,14 +49,41 @@ export default function RootLayout({
                     Textura
                   </span>
                 </div>
-                <ThemeToggle />
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="https://github.com/artreimus/textura"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                    aria-label="View source on GitHub"
+                  >
+                    <Github className="w-4 h-4 text-slate-600 dark:text-zinc-400" />
+                  </Link>
+                  <ThemeToggle />
+                </div>
               </div>
             </header>
 
             <main className="flex-1">{children}</main>
             <footer className="mt-10 p-4 md:p-8 text-xs text-slate-500 dark:text-zinc-500 text-center">
-              Built with ❤️. Inspired by ascii-image-converter (Apache-2.0).
-              This web app is MIT-licensed.
+              Built with ❤️ by{' '}
+              <a
+                href="https://github.com/artreimus"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-700 dark:hover:text-zinc-300 transition-colors"
+              >
+                Arthur Reimus
+              </a>{' '}
+              from{' '}
+              <a
+                href="https://github.com/ylang-labs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-700 dark:hover:text-zinc-300 transition-colors"
+              >
+                Ylang Labs
+              </a>
             </footer>
           </div>
           <Toaster />
